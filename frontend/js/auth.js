@@ -1,72 +1,112 @@
-/* auth.js — Login, Register, Logout */
-const Auth = {
+/* auth.js — Handles login/register against live backend API */
+var Auth = {
   isRegister: false,
   user: null,
 
-  init() {
-    const token = localStorage.getItem(CONFIG.TOKEN_KEY);
+  init: function() {
+    var token = localStorage.getItem(CONFIG.TOKEN_KEY);
     if (!token) { this.show(); return false; }
+    // Try to restore user from localStorage
+    try {
+      var u = localStorage.getItem('upscMaaUser');
+      if (u) this.user = JSON.parse(u);
+    } catch(e) {}
     return true;
   },
 
-  show() {
+  show: function() {
     document.getElementById('authOv').classList.add('show');
-  },
-
-  hide() {
-    document.getElementById('authOv').classList.remove('show');
-  },
-
-  toggle() {
-    this.isRegister = !this.isRegister;
-    const btn   = document.getElementById('authSubmit');
-    const name  = document.getElementById('authName');
-    const sw    = document.querySelector('.auth-switch span');
-    btn.textContent  = this.isRegister ? 'Register' : 'Login';
-    name.style.display = this.isRegister ? 'block' : 'none';
-    sw.textContent   = this.isRegister ? 'Already registered? Login' : 'New user? Register here';
     document.getElementById('authErr').textContent = '';
   },
 
-  async submit() {
-    const email = document.getElementById('authEmail').value.trim();
-    const pass  = document.getElementById('authPass').value;
-    const name  = document.getElementById('authName').value.trim();
-    const err   = document.getElementById('authErr');
+  hide: function() {
+    document.getElementById('authOv').classList.remove('show');
+  },
 
-    if (!email || !pass) { err.textContent = 'Email and password required'; return; }
-    document.getElementById('authSubmit').textContent = '...Loading';
+  toggle: function() {
+    this.isRegister = !this.isRegister;
+    var btn  = document.getElementById('authSubmit');
+    var name = document.getElementById('authName');
+    var sw   = document.querySelector('.auth-switch span');
+    btn.textContent        = this.isRegister ? 'Register' : 'Login';
+    name.style.display     = this.isRegister ? 'block' : 'none';
+    sw.textContent         = this.isRegister ? 'Already registered? Login' : 'New user? Register here';
+    document.getElementById('authErr').textContent = '';
+  },
 
-    let data;
-    if (this.isRegister) {
-      if (!name) { err.textContent = 'Name required for registration'; document.getElementById('authSubmit').textContent = 'Register'; return; }
-      data = await API.register(name, email, pass, STATE.hoursPerDay);
-    } else {
-      data = await API.login(email, pass);
+  submit: async function() {
+    var email  = document.getElementById('authEmail').value.trim();
+    var pass   = document.getElementById('authPass').value;
+    var name   = document.getElementById('authName').value.trim();
+    var errEl  = document.getElementById('authErr');
+    var btn    = document.getElementById('authSubmit');
+
+    errEl.textContent = '';
+    if (!email || !pass) { errEl.textContent = '⚠️ Email and password required'; return; }
+    if (pass.length < 6) { errEl.textContent = '⚠️ Password must be at least 6 characters'; return; }
+    if (this.isRegister && !name) { errEl.textContent = '⚠️ Please enter your name'; return; }
+
+    btn.textContent = 'Please wait...';
+    btn.disabled = true;
+
+    var data;
+    try {
+      if (this.isRegister) {
+        data = await API.register(name, email, pass, STATE.hoursPerDay);
+      } else {
+        data = await API.login(email, pass);
+      }
+    } catch(e) {
+      data = null;
     }
 
-    if (!data) {
-      err.textContent = 'Login failed. Check email/password.';
-      document.getElementById('authSubmit').textContent = this.isRegister ? 'Register' : 'Login';
+    btn.disabled = false;
+    btn.textContent = this.isRegister ? 'Register' : 'Login';
+
+    if (!data || !data.token) {
+      if (this.isRegister) {
+        errEl.textContent = '❌ Registration failed. Email may already be registered.';
+      } else {
+        errEl.textContent = '❌ Login failed. Check your email and password.';
+      }
       return;
     }
 
+    // Success
     localStorage.setItem(CONFIG.TOKEN_KEY, data.token);
+    localStorage.setItem('upscMaaUser', JSON.stringify(data.user));
     this.user = data.user;
 
-    // Sync user settings to state
     if (data.user.hoursPerDay) STATE.hoursPerDay = data.user.hoursPerDay;
     if (data.user.alarms)      STATE.alarms = data.user.alarms;
     if (data.user.firstLaunch) STATE.firstLaunch = data.user.firstLaunch;
+
+    // Per-user state key
+    CONFIG.USER_STATE_KEY = CONFIG.STATE_KEY + '_' + data.user.id;
+    loadState();
     saveState();
 
     this.hide();
     App.init();
   },
 
-  logout() {
+  updateUser: function(fields) {
+    if (!this.user) return;
+    Object.keys(fields).forEach(function(k) { Auth.user[k] = fields[k]; });
+    localStorage.setItem('upscMaaUser', JSON.stringify(this.user));
+  },
+
+  logout: function() {
     localStorage.removeItem(CONFIG.TOKEN_KEY);
+    localStorage.removeItem('upscMaaUser');
     this.user = null;
+    this.isRegister = false;
+    var btn = document.getElementById('authSubmit');
+    if (btn) btn.textContent = 'Login';
+    var name = document.getElementById('authName');
+    if (name) name.style.display = 'none';
+    var sw = document.querySelector('.auth-switch span');
+    if (sw) sw.textContent = 'New user? Register here';
     this.show();
   }
 };

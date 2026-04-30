@@ -1,63 +1,41 @@
-/* api.js — All backend API calls */
+/* api.js — All backend API calls with silent fallback */
 const API = {
-  _token: () => localStorage.getItem(CONFIG.TOKEN_KEY),
-
-  _headers() {
-    const h = { 'Content-Type': 'application/json' };
-    const t = this._token();
-    if (t) h['Authorization'] = `Bearer ${t}`;
-    return h;
-  },
-
-  async _req(method, path, body) {
+  _req: async function(method, path, body) {
     try {
-      const res = await fetch(`${CONFIG.API_URL}${path}`, {
+      const token = localStorage.getItem(CONFIG.TOKEN_KEY);
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch(CONFIG.API_URL + path, {
         method,
-        headers: this._headers(),
-        body: body ? JSON.stringify(body) : undefined
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(8000)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'API error');
       return data;
-    } catch(err) {
-      console.warn(`API ${method} ${path}:`, err.message);
+    } catch(e) {
+      console.warn('API ' + method + ' ' + path + ':', e.message);
       return null;
     }
   },
 
-  get:    (path)        => API._req('GET',    path),
-  post:   (path, body)  => API._req('POST',   path, body),
-  put:    (path, body)  => API._req('PUT',    path, body),
-  delete: (path)        => API._req('DELETE', path),
+  get:  function(path)       { return API._req('GET',    path); },
+  post: function(path, body) { return API._req('POST',   path, body); },
+  put:  function(path, body) { return API._req('PUT',    path, body); },
+  del:  function(path)       { return API._req('DELETE', path); },
 
-  // Auth
-  login:    (email, pass)       => API.post('/auth/login',    { email, password: pass }),
-  register: (name, email, pass, h) => API.post('/auth/register', { name, email, password: pass, hoursPerDay: h }),
-  me:       ()                  => API.get('/auth/me'),
-
-  // Progress
-  today:      ()          => API.get('/progress/today'),
-  taskDone:   (body)      => API.post('/progress/task-done', body),
-  syncTimer:  (sec, dow)  => API.post('/progress/timer', { seconds: sec, dayOfWeek: dow }),
-
-  // Hours
-  updateHours: (h) => API.put('/users/hours', { hoursPerDay: h }),
-
-  // Quiz
-  submitQuiz: (body) => API.post('/quiz/submit', body),
-  quizStats:  ()     => API.get('/quiz/stats'),
-
-  // Notes
-  saveNote:   (body)  => API.post('/notes', body),
-  getNotes:   ()      => API.get('/notes'),
-
-  // Stats
-  dashboard:  () => API.get('/stats/dashboard'),
-
-  // Chat
-  chat:       (message, history) => API.post('/chat/message', { message, conversationHistory: history }),
-
-  // Push
-  savePush:   (sub) => API.put('/users/push-subscription', { subscription: sub }),
-  vapidKey:   ()    => API.get('/notifications/vapid-key'),
+  login:       function(email, pass)           { return API.post('/auth/login',    { email: email, password: pass }); },
+  register:    function(name, email, pass, h)  { return API.post('/auth/register', { name: name, email: email, password: pass, hoursPerDay: h }); },
+  me:          function()                      { return API.get('/auth/me'); },
+  today:       function()                      { return API.get('/progress/today'); },
+  taskDone:    function(body)                  { return API.post('/progress/task-done', body); },
+  syncTimer:   function(sec, dow)              { return API.post('/progress/timer', { seconds: sec, dayOfWeek: dow }); },
+  updateHours: function(h)                     { return API.put('/users/hours', { hoursPerDay: h }); },
+  updateProfile: function(data)                { return API.put('/users/profile', data); },
+  submitQuiz:  function(body)                  { return API.post('/quiz/submit', body); },
+  saveNote:    function(body)                  { return API.post('/notes', body); },
+  dashboard:   function()                      { return API.get('/stats/dashboard'); },
+  chat:        function(message, history)      { return API.post('/chat/message', { message: message, conversationHistory: history }); },
+  vapidKey:    function()                      { return API.get('/notifications/vapid-key'); },
 };
