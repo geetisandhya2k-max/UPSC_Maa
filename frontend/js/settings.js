@@ -33,6 +33,12 @@ var Settings = {
       Plan.renderContent();
     }
     App.toast('📅 Plan updated to ' + days + ' days!');
+    // Update plan title immediately
+    var titleEl = document.getElementById('planTitle');
+    if (titleEl) titleEl.textContent = days + '-Day UPSC Plan (' + Math.round(days/30) + ' months)';
+    // Also force refresh plan if visible
+    Plan.renderTabs();
+    Plan.renderContent();
   },
 
   updateTargetInfo: function(days) {
