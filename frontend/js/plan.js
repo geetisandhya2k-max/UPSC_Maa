@@ -1,14 +1,22 @@
 /* plan.js */
-var PHASES = [
-  { name:'Foundation', days:'1-90',    desc:'All NCERTs' },
-  { name:'Core Study', days:'91-210',  desc:'Standard books' },
-  { name:'Revision',   days:'211-300', desc:'Notes + Writing' },
-  { name:'Mock Tests', days:'301-365', desc:'PYQs + Final' },
-];
+function getPhases() {
+  var t = STATE.targetDays || 365;
+  var p1 = Math.round(t * 0.25);
+  var p2 = Math.round(t * 0.57);
+  var p3 = Math.round(t * 0.82);
+  return [
+    { name:'Foundation', days:'1-'+p1,          desc:'All NCERTs' },
+    { name:'Core Study', days:(p1+1)+'-'+p2,    desc:'Standard books' },
+    { name:'Revision',   days:(p2+1)+'-'+p3,    desc:'Notes + Writing' },
+    { name:'Mock Tests', days:(p3+1)+'-'+t,     desc:'PYQs + Final' },
+  ];
+}
+var PHASES = getPhases();
 var activePlan = 'All';
 
 var Plan = {
   renderTabs: function() {
+    PHASES = getPhases();  // refresh based on current targetDays
     var tabs = ['All'].concat(PHASES.map(function(p){return p.name;}));
     document.getElementById('planTabs').innerHTML = tabs.map(function(p) {
       return '<button class="ptab '+(activePlan===p?'active':'')+'" onclick="Plan.setPhase(\''+p+'\')">'+p+'</button>';
@@ -19,7 +27,8 @@ var Plan = {
 
   buildDays: function() {
     var days = [];
-    for (var d = 1; d <= 365; d++) {
+    var totalDays = STATE.targetDays || 365;
+    for (var d = 1; d <= totalDays; d++) {
       var t   = SYLLABUS[(d-1) % SYLLABUS.length];
       var h   = STATE.hoursPerDay;
       var dur = h<=0.5?'20 min':h<=1?'35 min':h<=2?'60 min':h<=4?'90 min':h<=6?'120 min':'150 min';

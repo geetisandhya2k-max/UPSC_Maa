@@ -19,10 +19,15 @@ var StatsPage = {
         ? Math.round(STATE.qScores.reduce(function(a,b){return a+b;},0)/STATE.qScores.length) : 0;
       document.getElementById('ss-qz').textContent = STATE.qScores.length ? avg + '%' : '—';
       var covered = Math.min(STATE.topicsDone||0, 420);
+      var targetDays2 = STATE.targetDays || 365;
       document.getElementById('syllFill').style.width  = Math.round(covered/420*100) + '%';
       document.getElementById('syllDone').textContent  = covered + ' topics done';
-      var days = Math.max(0, Math.ceil((new Date('2026-05-24') - new Date()) / 864e5));
+      // Days left = targetDays - dayInPlan
+      var daysStudied = STATE.dayInPlan || 1;
+      var targetDays  = STATE.targetDays || 365;
+      var days = Math.max(0, targetDays - daysStudied);
       document.getElementById('dLeft').textContent = days;
+      document.getElementById('dLeftLabel') && (document.getElementById('dLeftLabel').textContent = 'Days remaining in your ' + (STATE.targetDays||365) + '-day plan');
       StatsPage.renderChart(STATE.weekH);
     }
   },

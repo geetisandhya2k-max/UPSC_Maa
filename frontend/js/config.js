@@ -13,7 +13,7 @@ var STATE = {
   weekH: [0,0,0,0,0,0,0], qScores: [], notes: {}, hoursPerDay: 2,
   alarms: { morning: '06:00', afternoon: '14:00', night: '21:00', active: true },
   lastAlarmChk: '', lastStudyDate: '', totalSec: 0, firstLaunch: null,
-  topicsDone: 0, hourGoalCelebrated: false
+  topicsDone: 0, hourGoalCelebrated: false, targetDays: 365
 };
 
 function loadState() {
