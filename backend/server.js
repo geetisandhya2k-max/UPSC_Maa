@@ -1,8 +1,6 @@
 require('dotenv').config();
 const express   = require('express');
 const cors      = require('cors');
-const morgan    = require('morgan');
-const rateLimit = require('express-rate-limit');
 const path      = require('path');
 const connectDB = require('./config/db');
 
@@ -11,29 +9,21 @@ connectDB();
 const app  = express();
 const PORT = process.env.PORT || 5000;
 
-// ── CORS (must be before other middleware) ────────────────
+// ── Trust Render's proxy (REQUIRED for rate limiting on Render) ──
+app.set('trust proxy', 1);
+
+// ── CORS ──────────────────────────────────────────────────
 app.use(cors({
-  origin: true,          // reflect request origin - works with credentials
+  origin: true,
   credentials: true,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
 }));
-app.options('*', cors()); // handle preflight
+app.options('*', cors());
 
 // ── Body Parsing ──────────────────────────────────────────
 app.use(express.json({ limit: '50kb' }));
 app.use(express.urlencoded({ extended: true }));
-
-// ── Logging (dev only) ────────────────────────────────────
-if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
-
-// ── Rate Limiting ─────────────────────────────────────────
-app.use('/api/', rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
-  standardHeaders: true,
-  legacyHeaders: false
-}));
 
 // ── API Routes ────────────────────────────────────────────
 app.use('/api/auth',          require('./routes/auth'));
@@ -51,11 +41,9 @@ app.get('/api/health', function(_req, res) {
   res.json({ status: 'ok', app: 'UPSC Maa', time: new Date() });
 });
 
-// ── Serve Frontend Static Files ───────────────────────────
+// ── Serve Frontend ────────────────────────────────────────
 var FRONTEND = path.join(__dirname, '..', 'frontend');
 app.use(express.static(FRONTEND));
-
-// SPA fallback
 app.get('*', function(req, res) {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API route not found' });
@@ -71,8 +59,8 @@ app.use(function(err, _req, res, _next) {
 
 // ── Start ─────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', function() {
-  console.log('🚀 UPSC Maa running on port ' + PORT + ' [' + (process.env.NODE_ENV || 'development') + ']');
-  console.log('📂 Serving frontend from: ' + FRONTEND);
+  console.log('🚀 UPSC Maa running on port ' + PORT);
+  console.log('📂 Frontend: ' + FRONTEND);
 });
 
 module.exports = app;
