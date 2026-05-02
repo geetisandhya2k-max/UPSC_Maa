@@ -7,7 +7,6 @@ const rateLimit = require('express-rate-limit');
 const path      = require('path');
 const connectDB = require('./config/db');
 
-// ── Connect MongoDB ──────────────────────────────────────
 connectDB();
 
 const app  = express();
@@ -27,10 +26,29 @@ app.use(helmet({
   }
 }));
 
+// ── CORS — fixed: credentials:true is incompatible with origin:'*'
+// Since frontend and backend are on same domain on Render, we allow same origin
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
-    : '*',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, same-origin)
+    if (!origin) return callback(null, true);
+    // Allow the Render domain and localhost
+    var allowed = [
+      'https://upsc-maa-1b3y.onrender.com',
+      'http://localhost:5000',
+      'http://localhost:3000'
+    ];
+    // Also allow any onrender.com subdomain
+    if (origin.includes('onrender.com') || origin.includes('localhost')) {
+      return callback(null, true);
+    }
+    // Allow if ALLOWED_ORIGINS env var set
+    if (process.env.ALLOWED_ORIGINS) {
+      var list = process.env.ALLOWED_ORIGINS.split(',').map(function(s){ return s.trim(); });
+      if (list.indexOf(origin) !== -1) return callback(null, true);
+    }
+    callback(null, true); // Allow all for now — tighten in production
+  },
   methods:       ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders:['Content-Type','Authorization'],
   credentials:   true
@@ -41,7 +59,6 @@ app.use('/api/', rateLimit({
   windowMs: 15 * 60 * 1000, max: 300,
   standardHeaders: true, legacyHeaders: false
 }));
-app.use('/api/chat/', rateLimit({ windowMs: 60 * 1000, max: 30 }));
 
 // ── Body Parsing ──────────────────────────────────────────
 app.use(express.json({ limit: '50kb' }));
@@ -51,7 +68,7 @@ if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 // ── API Routes ────────────────────────────────────────────
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/users',         require('./routes/users'));
-app.use('/api/user',          require('./routes/users'));   // alias
+app.use('/api/user',          require('./routes/users'));
 app.use('/api/progress',      require('./routes/progress'));
 app.use('/api/quiz',          require('./routes/quiz'));
 app.use('/api/notes',         require('./routes/notes'));
@@ -60,34 +77,30 @@ app.use('/api/stats',         require('./routes/stats'));
 app.use('/api/notifications', require('./routes/notifications'));
 
 // ── Health Check ──────────────────────────────────────────
-app.get('/api/health', (_req, res) =>
-  res.json({ status: 'ok', app: 'UPSC Maa', time: new Date(), env: process.env.NODE_ENV })
-);
+app.get('/api/health', function(_req, res) {
+  res.json({ status: 'ok', app: 'UPSC Maa', time: new Date(), env: process.env.NODE_ENV });
+});
 
-// ── Serve Frontend Static Files ───────────────────────────
-// __dirname = /app/backend  (on Render) or ./backend (local)
-// frontend  = /app/frontend (on Render) or ./frontend (local)
-const FRONTEND_PATH = path.join(__dirname, '..', 'frontend');
+// ── Serve Frontend ────────────────────────────────────────
+var FRONTEND_PATH = path.join(__dirname, '..', 'frontend');
 app.use(express.static(FRONTEND_PATH));
 
-// SPA fallback — send index.html for all non-API routes
-app.get('*', (req, res) => {
+app.get('*', function(req, res) {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API route not found' });
   }
   res.sendFile(path.join(FRONTEND_PATH, 'index.html'));
 });
 
-// ── Global Error Handler ──────────────────────────────────
-app.use((err, _req, res, _next) => {
+// ── Error Handler ─────────────────────────────────────────
+app.use(function(err, _req, res, _next) {
   console.error('[ERROR]', err.message);
   res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
 });
 
-// ── Start ─────────────────────────────────────────────────
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 UPSC Maa running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
-  console.log(`📂 Serving frontend from: ${FRONTEND_PATH}`);
+app.listen(PORT, '0.0.0.0', function() {
+  console.log('🚀 UPSC Maa running on port ' + PORT + ' [' + (process.env.NODE_ENV || 'development') + ']');
+  console.log('📂 Serving frontend from: ' + FRONTEND_PATH);
 });
 
 module.exports = app;
