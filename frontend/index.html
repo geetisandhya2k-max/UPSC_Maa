@@ -263,3 +263,533 @@
 <script src="js/app.js?v=2"></script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FF6B00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="UPSC Maa">
+<meta name="description" content="UPSC Maa - Your Personal IAS Study Companion">
+<title>UPSC Maa – Complete IAS Study App</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Noto+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+
+<!-- OVERLAYS -->
+<div class="notif-ov" id="notifOv">
+  <div class="notif-box">
+    <div class="nemi" id="nEmi">⏰</div>
+    <div class="nttl" id="nTtl">Study Time!</div>
+    <div class="nmsg" id="nMsg">Beta, Maa is calling you!</div>
+    <button class="nbtn" onclick="App.dismissNotif()">I'm Ready Maa! 💪</button>
+  </div>
+</div>
+
+<div class="celeb-ov" id="celebOv">
+  <div class="cconf" id="confC"></div>
+  <div class="celeb-box">
+    <span class="cemi" id="cEmi">🎉</span>
+    <div class="cttl" id="cTtl">Shabash Beta!</div>
+    <div class="cmsg" id="cMsg">Maa is so proud of you!</div>
+    <button class="ccls" onclick="App.closeCeleb()">Thank you Maa! ❤️</button>
+  </div>
+</div>
+
+<div class="modal-ov" id="lessonMod">
+  <div class="modal-tap" onclick="App.closeMod()"></div>
+  <div class="modal-box">
+    <button class="modal-cls" onclick="App.closeMod()">✕ Close</button>
+    <div class="modal-ttl" id="lTtl"></div>
+    <div class="modal-sub" id="lSub"></div>
+    <div class="lbody" id="lBody"></div>
+    <div class="quiz-w" id="lQuiz"></div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="auth-ov" id="authOv">
+  <div class="auth-box">
+    <div class="auth-logo">👩</div>
+    <h2 class="auth-title">UPSC Maa</h2>
+    <p class="auth-sub">Your Personal IAS Study Mother</p>
+    <div id="authForm">
+      <input class="auth-inp" type="email" id="authEmail" placeholder="Email address">
+      <input class="auth-inp" type="password" id="authPass" placeholder="Password (min 6 chars)">
+      <input class="auth-inp" id="authName" placeholder="Your name (for register)" style="display:none">
+      <button class="auth-btn" id="authSubmit" onclick="Auth.submit()">Login</button>
+      <p class="auth-switch">New user? <span onclick="Auth.toggle()" style="color:var(--sf);cursor:pointer;">Register here</span></p>
+      <p class="auth-err" id="authErr"></p>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-row">
+    <div class="maa-orb">👩</div>
+    <div class="hdr-txt">
+      <h1>UPSC Maa 🕉️</h1>
+      <p id="hDate">Your Personal IAS Mother</p>
+    </div>
+    <div class="hdr-right">
+      <button id="installBtn" onclick="App.installPWA()" style="display:none">📲 Install</button>
+      <div class="streak-pill">
+        <div class="sn" id="streakN">0</div>
+        <div class="sl">🔥 days</div>
+      </div>
+      <button class="logout-btn" onclick="Auth.logout()" title="Logout">⎋</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGES -->
+<div class="pages">
+
+  <!-- HOME -->
+  <div class="page active" id="pg-home">
+    <div class="maa-bub">
+      <div class="tag">💛 Maa says —</div>
+      <div class="msg" id="maaMsg">Loading...</div>
+    </div>
+    <div class="adapt-banner" id="adaptBanner">
+      <div class="ab-icon">⚡</div>
+      <div class="ab-info">
+        <div class="ab-title" id="abTitle">Today's Adaptive Plan</div>
+        <div class="ab-sub" id="abSub">Based on your study time, tasks adjusted for you</div>
+      </div>
+    </div>
+    <div class="dt-row">
+      <div class="dt-card"><div class="v" id="todayDate">—</div><div class="l">📅 Today</div></div>
+      <div class="dt-card" id="timerCard"><div class="v" id="timerDisp">00:00:00</div><div class="l" id="timerLbl">⏱️ Study Timer</div></div>
+    </div>
+    <div class="timer-btns">
+      <button class="tbtn tbtn-s" id="startBtn" onclick="Timer.start()">▶ Start</button>
+      <button class="tbtn tbtn-p" onclick="Timer.pause()">⏸ Pause</button>
+      <button class="tbtn tbtn-r" onclick="Timer.reset()">↺</button>
+    </div>
+    <div class="prog-card">
+      <h3>📊 Today's Progress</h3>
+      <div class="prog-row">
+        <div class="ring-w">
+          <svg width="78" height="78" viewBox="0 0 78 78">
+            <circle cx="39" cy="39" r="32" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="6"/>
+            <circle cx="39" cy="39" r="32" fill="none" stroke="url(#rg)" stroke-width="6"
+              stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="201" id="ring"
+              style="transition:stroke-dashoffset .9s ease;"/>
+            <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#FF6B00"/><stop offset="100%" stop-color="#FFB300"/>
+            </linearGradient></defs>
+          </svg>
+          <div class="ring-c"><div class="rp" id="rpct">0%</div><div class="rd" id="rdn">0/0</div></div>
+        </div>
+        <div class="pstats">
+          <div class="si"><span class="sl">✅ Tasks</span><span class="sv" id="sTasks">0/0</span></div>
+          <div class="si"><span class="sl">⏱️ Studied</span><span class="sv" id="sTime">0h</span></div>
+          <div class="si"><span class="sl">🎯 Target</span><span class="sv" id="sTarget">—</span></div>
+          <div class="si"><span class="sl">🧠 Quiz</span><span class="sv" id="sQuiz">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="hrs-done-bar">
+      <h3>⏳ Daily Hour Progress</h3>
+      <div class="hbar-track"><div class="hbar-fill" id="hbarFill" style="width:0%"></div></div>
+      <div class="hbar-lbl"><span id="hbarDone">0 min studied</span><span id="hbarTarget">Target: —</span></div>
+    </div>
+    <div class="sec"><div class="st"><span>📋</span> Today's Tasks</div><div id="tasksC"></div></div>
+    <div class="sec"><div class="st"><span>🎓</span> All Subjects</div><div class="subj-grid" id="subjG"></div></div>
+  </div>
+
+  <!-- 365 PLAN -->
+  <div class="page" id="pg-plan">
+    <div class="sec" style="padding-bottom:4px;">
+      <div class="st"><span>📅</span> 1-Year UPSC Plan</div>
+      <p style="font-size:10px;color:var(--muted);">Tap any day to study. Duration adapts to your daily hours. Today is highlighted orange.</p>
+    </div>
+    <div class="plan-tabs" id="planTabs"></div>
+    <div id="planContent" style="padding-bottom:8px;"></div>
+  </div>
+
+  <!-- REVISE -->
+  <div class="page" id="pg-revise">
+    <div class="sec">
+      <div class="st"><span>🔄</span> Flashcard Revision</div>
+      <p style="font-size:10px;color:var(--muted);margin-bottom:9px;">Tap card to flip. 60 cards across all 8 subjects. Daily revision = 70% better retention!</p>
+      <div id="fcC"></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="page" id="pg-stats">
+    <div class="sec" style="padding-bottom:4px;"><div class="st"><span>📈</span> Your Progress</div></div>
+    <div class="sgrid">
+      <div class="sbox"><div class="big" id="ss-str">0</div><div class="sm">🔥 Day Streak</div></div>
+      <div class="sbox"><div class="big" id="ss-hrs">0h</div><div class="sm">⏱️ Total Hours</div></div>
+      <div class="sbox"><div class="big" id="ss-tsk">0</div><div class="sm">✅ Tasks Done</div></div>
+      <div class="sbox"><div class="big" id="ss-qz">—</div><div class="sm">🧠 Quiz Avg</div></div>
+    </div>
+    <div class="wchart"><h3>📅 This Week (hours)</h3><div class="bchart" id="barC"></div></div>
+    <div class="dleft">
+      <h3>⏳ Days to UPSC Prelims 2026</h3>
+      <div class="dn" id="dLeft">—</div>
+      <div class="ds">Har ek din count karta hai beta! 💪</div>
+    </div>
+    <div class="hrs-done-bar" style="margin:0 13px 9px;">
+      <h3>📊 Syllabus Coverage</h3>
+      <div class="hbar-track"><div class="hbar-fill" id="syllFill" style="width:0%"></div></div>
+      <div class="hbar-lbl"><span id="syllDone">0 topics done</span><span>Total: 420 topics</span></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="pg-settings">
+    <div class="slider-section" style="margin-top:10px;">
+      <h3>⏰ Daily Study Hours</h3>
+      <p>Maa adapts <strong>tasks, durations, and the full plan</strong> based on this. Start with 30 min — build up! Changes sync to server instantly.</p>
+      <div class="sl-row">
+        <label>Hours/day</label>
+        <input type="range" min="0.5" max="12" step="0.5" value="2" id="hourSlider" oninput="Settings.onHourChange(this.value)">
+        <div class="sv" id="hourSV">2h</div>
+      </div>
+      <div class="tasks-preview" id="tasksPreview"></div>
+
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <h4 style="font-family:'Baloo 2';font-size:12px;color:var(--gold);margin-bottom:5px;">🎯 Set Your Target Days</h4>
+        <p style="font-size:10px;color:var(--muted);margin-bottom:10px;">How many days do you want to complete UPSC preparation? Maa will divide the full syllabus across your target!</p>
+        <div class="sl-row">
+          <label>Target days</label>
+          <input type="range" min="30" max="730" step="10" value="365" id="targetDaysSlider" oninput="Settings.onTargetDaysChange(this.value)">
+          <div class="sv" id="targetDaysSV">365 days</div>
+        </div>
+        <div class="tasks-preview" id="targetDaysInfo"></div>
+      </div>
+    </div>
+    <div class="set-card">
+      <h3>🔔 Alarm Times</h3>
+      <div class="al-row"><label>🌅 Morning</label><input type="time" class="time-inp" id="alM" value="06:00"></div>
+      <div class="al-row"><label>☀️ Afternoon</label><input type="time" class="time-inp" id="alA" value="14:00"></div>
+      <div class="al-row"><label>🌙 Night</label><input type="time" class="time-inp" id="alN" value="21:00"></div>
+      <div class="al-row"><label>Alarms On</label><div class="tog on" id="alTog" onclick="Settings.toggleAlarm()"></div></div>
+      <button class="notif-btn2" onclick="Notifications.request()">🔔 Allow Notifications</button>
+      <button class="save-btn" onclick="Settings.save()">💾 Save Settings</button>
+    </div>
+    <div class="inst-guide">
+      <h3>📲 Install on Phone</h3>
+      <div class="ist"><div class="isn">1</div><div><strong>Android Chrome:</strong> Tap ⋮ → "Add to Home Screen"</div></div>
+      <div class="ist"><div class="isn">2</div><div><strong>iPhone Safari:</strong> Share 📤 → "Add to Home Screen"</div></div>
+      <div class="ist"><div class="isn">3</div><div>Allow Notifications above for Maa's daily alarms! 🔔</div></div>
+    </div>
+    <div class="chat-wrap">
+      <div class="st" style="padding:9px 0 4px;"><span>💬</span> Ask Maa (AI)</div>
+      <div class="chat-msgs" id="chatMsgs">
+        <div class="cmsg maa">
+          <div class="cav mav">👩</div>
+          <div class="cbbl">Beta, Maa yahan hai! UPSC ke baare mein kuch bhi poocho. 🤗</div>
+        </div>
+      </div>
+      <div class="chat-inp-row">
+        <input class="chat-inp" id="chatInp" placeholder="Ask Maa about UPSC..." onkeydown="if(event.key==='Enter')Chat.send()">
+        <button class="chat-snd" onclick="Chat.send()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <div class="ni active" onclick="App.goNav('home',this)"><div class="ico">🏠</div><div class="lbl">Home</div></div>
+  <div class="ni" onclick="App.goNav('plan',this)"><div class="ico">📅</div><div class="lbl">365 Plan</div></div>
+  <div class="ni" onclick="App.goNav('revise',this)"><div class="ico">🔄</div><div class="lbl">Revise</div></div>
+  <div class="ni" onclick="App.goNav('stats',this)"><div class="ico">📊</div><div class="lbl">Stats</div></div>
+  <div class="ni" onclick="App.goNav('settings',this)"><div class="ico">⚙️</div><div class="lbl">Settings</div></div>
+</nav>
+
+<!-- JS — order matters -->
+<script src="js/config.js?v=2"></script>
+<script src="js/syllabus.js?v=2"></script>
+<script src="js/lessons.js?v=2"></script>
+<script src="js/flashcards.js?v=2"></script>
+<script src="js/api.js?v=2"></script>
+<script src="js/auth.js?v=2"></script>
+<script src="js/timer.js?v=2"></script>
+<script src="js/tasks.js?v=2"></script>
+<script src="js/plan.js?v=2"></script>
+<script src="js/stats.js?v=2"></script>
+<script src="js/settings.js?v=2"></script>
+<script src="js/chat.js?v=2"></script>
+<script src="js/notifications.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FF6B00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="UPSC Maa">
+<meta name="description" content="UPSC Maa - Your Personal IAS Study Companion">
+<title>UPSC Maa – Complete IAS Study App</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Noto+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+
+<!-- OVERLAYS -->
+<div class="notif-ov" id="notifOv">
+  <div class="notif-box">
+    <div class="nemi" id="nEmi">⏰</div>
+    <div class="nttl" id="nTtl">Study Time!</div>
+    <div class="nmsg" id="nMsg">Beta, Maa is calling you!</div>
+    <button class="nbtn" onclick="App.dismissNotif()">I'm Ready Maa! 💪</button>
+  </div>
+</div>
+
+<div class="celeb-ov" id="celebOv">
+  <div class="cconf" id="confC"></div>
+  <div class="celeb-box">
+    <span class="cemi" id="cEmi">🎉</span>
+    <div class="cttl" id="cTtl">Shabash Beta!</div>
+    <div class="cmsg" id="cMsg">Maa is so proud of you!</div>
+    <button class="ccls" onclick="App.closeCeleb()">Thank you Maa! ❤️</button>
+  </div>
+</div>
+
+<div class="modal-ov" id="lessonMod">
+  <div class="modal-tap" onclick="App.closeMod()"></div>
+  <div class="modal-box">
+    <button class="modal-cls" onclick="App.closeMod()">✕ Close</button>
+    <div class="modal-ttl" id="lTtl"></div>
+    <div class="modal-sub" id="lSub"></div>
+    <div class="lbody" id="lBody"></div>
+    <div class="quiz-w" id="lQuiz"></div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="auth-ov" id="authOv">
+  <div class="auth-box">
+    <div class="auth-logo">👩</div>
+    <h2 class="auth-title">UPSC Maa</h2>
+    <p class="auth-sub">Your Personal IAS Study Mother</p>
+    <div id="authForm">
+      <input class="auth-inp" type="email" id="authEmail" placeholder="Email address">
+      <input class="auth-inp" type="password" id="authPass" placeholder="Password (min 6 chars)">
+      <input class="auth-inp" id="authName" placeholder="Your name (for register)" style="display:none">
+      <button class="auth-btn" id="authSubmit" onclick="Auth.submit()">Login</button>
+      <p class="auth-switch">New user? <span onclick="Auth.toggle()" style="color:var(--sf);cursor:pointer;">Register here</span></p>
+      <p class="auth-err" id="authErr"></p>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-row">
+    <div class="maa-orb">👩</div>
+    <div class="hdr-txt">
+      <h1>UPSC Maa 🕉️</h1>
+      <p id="hDate">Your Personal IAS Mother</p>
+    </div>
+    <div class="hdr-right">
+      <button id="installBtn" onclick="App.installPWA()" style="display:none">📲 Install</button>
+      <div class="streak-pill">
+        <div class="sn" id="streakN">0</div>
+        <div class="sl">🔥 days</div>
+      </div>
+      <button class="logout-btn" onclick="Auth.logout()" title="Logout">⎋</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGES -->
+<div class="pages">
+
+  <!-- HOME -->
+  <div class="page active" id="pg-home">
+    <div class="maa-bub">
+      <div class="tag">💛 Maa says —</div>
+      <div class="msg" id="maaMsg">Loading...</div>
+    </div>
+    <div class="adapt-banner" id="adaptBanner">
+      <div class="ab-icon">⚡</div>
+      <div class="ab-info">
+        <div class="ab-title" id="abTitle">Today's Adaptive Plan</div>
+        <div class="ab-sub" id="abSub">Based on your study time, tasks adjusted for you</div>
+      </div>
+    </div>
+    <div class="dt-row">
+      <div class="dt-card"><div class="v" id="todayDate">—</div><div class="l">📅 Today</div></div>
+      <div class="dt-card" id="timerCard"><div class="v" id="timerDisp">00:00:00</div><div class="l" id="timerLbl">⏱️ Study Timer</div></div>
+    </div>
+    <div class="timer-btns">
+      <button class="tbtn tbtn-s" id="startBtn" onclick="Timer.start()">▶ Start</button>
+      <button class="tbtn tbtn-p" onclick="Timer.pause()">⏸ Pause</button>
+      <button class="tbtn tbtn-r" onclick="Timer.reset()">↺</button>
+    </div>
+    <div class="prog-card">
+      <h3>📊 Today's Progress</h3>
+      <div class="prog-row">
+        <div class="ring-w">
+          <svg width="78" height="78" viewBox="0 0 78 78">
+            <circle cx="39" cy="39" r="32" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="6"/>
+            <circle cx="39" cy="39" r="32" fill="none" stroke="url(#rg)" stroke-width="6"
+              stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="201" id="ring"
+              style="transition:stroke-dashoffset .9s ease;"/>
+            <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#FF6B00"/><stop offset="100%" stop-color="#FFB300"/>
+            </linearGradient></defs>
+          </svg>
+          <div class="ring-c"><div class="rp" id="rpct">0%</div><div class="rd" id="rdn">0/0</div></div>
+        </div>
+        <div class="pstats">
+          <div class="si"><span class="sl">✅ Tasks</span><span class="sv" id="sTasks">0/0</span></div>
+          <div class="si"><span class="sl">⏱️ Studied</span><span class="sv" id="sTime">0h</span></div>
+          <div class="si"><span class="sl">🎯 Target</span><span class="sv" id="sTarget">—</span></div>
+          <div class="si"><span class="sl">🧠 Quiz</span><span class="sv" id="sQuiz">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="hrs-done-bar">
+      <h3>⏳ Daily Hour Progress</h3>
+      <div class="hbar-track"><div class="hbar-fill" id="hbarFill" style="width:0%"></div></div>
+      <div class="hbar-lbl"><span id="hbarDone">0 min studied</span><span id="hbarTarget">Target: —</span></div>
+    </div>
+    <div class="sec"><div class="st"><span>📋</span> Today's Tasks</div><div id="tasksC"></div></div>
+    <div class="sec"><div class="st"><span>🎓</span> All Subjects</div><div class="subj-grid" id="subjG"></div></div>
+  </div>
+
+  <!-- 365 PLAN -->
+  <div class="page" id="pg-plan">
+    <div class="sec" style="padding-bottom:4px;">
+      <div class="st"><span>📅</span> 1-Year UPSC Plan</div>
+      <p style="font-size:10px;color:var(--muted);">Tap any day to study. Duration adapts to your daily hours. Today is highlighted orange.</p>
+    </div>
+    <div class="plan-tabs" id="planTabs"></div>
+    <div id="planContent" style="padding-bottom:8px;"></div>
+  </div>
+
+  <!-- REVISE -->
+  <div class="page" id="pg-revise">
+    <div class="sec">
+      <div class="st"><span>🔄</span> Flashcard Revision</div>
+      <p style="font-size:10px;color:var(--muted);margin-bottom:9px;">Tap card to flip. 60 cards across all 8 subjects. Daily revision = 70% better retention!</p>
+      <div id="fcC"></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="page" id="pg-stats">
+    <div class="sec" style="padding-bottom:4px;"><div class="st"><span>📈</span> Your Progress</div></div>
+    <div class="sgrid">
+      <div class="sbox"><div class="big" id="ss-str">0</div><div class="sm">🔥 Day Streak</div></div>
+      <div class="sbox"><div class="big" id="ss-hrs">0h</div><div class="sm">⏱️ Total Hours</div></div>
+      <div class="sbox"><div class="big" id="ss-tsk">0</div><div class="sm">✅ Tasks Done</div></div>
+      <div class="sbox"><div class="big" id="ss-qz">—</div><div class="sm">🧠 Quiz Avg</div></div>
+    </div>
+    <div class="wchart"><h3>📅 This Week (hours)</h3><div class="bchart" id="barC"></div></div>
+    <div class="dleft">
+      <h3>⏳ Days to UPSC Prelims 2026</h3>
+      <div class="dn" id="dLeft">—</div>
+      <div class="ds">Har ek din count karta hai beta! 💪</div>
+    </div>
+    <div class="hrs-done-bar" style="margin:0 13px 9px;">
+      <h3>📊 Syllabus Coverage</h3>
+      <div class="hbar-track"><div class="hbar-fill" id="syllFill" style="width:0%"></div></div>
+      <div class="hbar-lbl"><span id="syllDone">0 topics done</span><span>Total: 420 topics</span></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="pg-settings">
+    <div class="slider-section" style="margin-top:10px;">
+      <h3>⏰ Daily Study Hours</h3>
+      <p>Maa adapts <strong>tasks, durations, and the full plan</strong> based on this. Start with 30 min — build up! Changes sync to server instantly.</p>
+      <div class="sl-row">
+        <label>Hours/day</label>
+        <input type="range" min="0.5" max="12" step="0.5" value="2" id="hourSlider" oninput="Settings.onHourChange(this.value)">
+        <div class="sv" id="hourSV">2h</div>
+      </div>
+      <div class="tasks-preview" id="tasksPreview"></div>
+
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <h4 style="font-family:'Baloo 2';font-size:12px;color:var(--gold);margin-bottom:5px;">🎯 Set Your Target Days</h4>
+        <p style="font-size:10px;color:var(--muted);margin-bottom:10px;">How many days do you want to complete UPSC preparation? Maa will divide the full syllabus across your target!</p>
+        <div class="sl-row">
+          <label>Target days</label>
+          <input type="range" min="30" max="730" step="10" value="365" id="targetDaysSlider" oninput="Settings.onTargetDaysChange(this.value)">
+          <div class="sv" id="targetDaysSV">365 days</div>
+        </div>
+        <div class="tasks-preview" id="targetDaysInfo"></div>
+      </div>
+    </div>
+    <div class="set-card">
+      <h3>🔔 Alarm Times</h3>
+      <div class="al-row"><label>🌅 Morning</label><input type="time" class="time-inp" id="alM" value="06:00"></div>
+      <div class="al-row"><label>☀️ Afternoon</label><input type="time" class="time-inp" id="alA" value="14:00"></div>
+      <div class="al-row"><label>🌙 Night</label><input type="time" class="time-inp" id="alN" value="21:00"></div>
+      <div class="al-row"><label>Alarms On</label><div class="tog on" id="alTog" onclick="Settings.toggleAlarm()"></div></div>
+      <button class="notif-btn2" onclick="Notifications.request()">🔔 Allow Notifications</button>
+      <button class="save-btn" onclick="Settings.save()">💾 Save Settings</button>
+    </div>
+    <div class="inst-guide">
+      <h3>📲 Install on Phone</h3>
+      <div class="ist"><div class="isn">1</div><div><strong>Android Chrome:</strong> Tap ⋮ → "Add to Home Screen"</div></div>
+      <div class="ist"><div class="isn">2</div><div><strong>iPhone Safari:</strong> Share 📤 → "Add to Home Screen"</div></div>
+      <div class="ist"><div class="isn">3</div><div>Allow Notifications above for Maa's daily alarms! 🔔</div></div>
+    </div>
+    <div class="chat-wrap">
+      <div class="st" style="padding:9px 0 4px;"><span>💬</span> Ask Maa (AI)</div>
+      <div class="chat-msgs" id="chatMsgs">
+        <div class="cmsg maa">
+          <div class="cav mav">👩</div>
+          <div class="cbbl">Beta, Maa yahan hai! UPSC ke baare mein kuch bhi poocho. 🤗</div>
+        </div>
+      </div>
+      <div class="chat-inp-row">
+        <input class="chat-inp" id="chatInp" placeholder="Ask Maa about UPSC..." onkeydown="if(event.key==='Enter')Chat.send()">
+        <button class="chat-snd" onclick="Chat.send()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <div class="ni active" onclick="App.goNav('home',this)"><div class="ico">🏠</div><div class="lbl">Home</div></div>
+  <div class="ni" onclick="App.goNav('plan',this)"><div class="ico">📅</div><div class="lbl">365 Plan</div></div>
+  <div class="ni" onclick="App.goNav('revise',this)"><div class="ico">🔄</div><div class="lbl">Revise</div></div>
+  <div class="ni" onclick="App.goNav('stats',this)"><div class="ico">📊</div><div class="lbl">Stats</div></div>
+  <div class="ni" onclick="App.goNav('settings',this)"><div class="ico">⚙️</div><div class="lbl">Settings</div></div>
+</nav>
+
+<!-- JS — order matters -->
+<script src="js/config.js?v=2"></script>
+<script src="js/syllabus.js?v=2"></script>
+<script src="js/lessons.js?v=2"></script>
+<script src="js/flashcards.js?v=2"></script>
+<script src="js/api.js?v=2"></script>
+<script src="js/auth.js?v=2"></script>
+<script src="js/timer.js?v=2"></script>
+<script src="js/tasks.js?v=2"></script>
+<script src="js/plan.js?v=2"></script>
+<script src="js/stats.js?v=2"></script>
+<script src="js/settings.js?v=2"></script>
+<script src="js/chat.js?v=2"></script>
+<script src="js/notifications.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
+</body>
+</html>
