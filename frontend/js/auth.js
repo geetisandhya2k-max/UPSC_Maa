@@ -33,14 +33,12 @@ var Auth = {
         App.init();
         return true;
       } else {
-        // Token expired — clear and show login
         localStorage.removeItem(CONFIG.TOKEN_KEY);
         localStorage.removeItem('upscMaaUser');
         Auth.show();
         return false;
       }
     } catch(e) {
-      // Timeout or network error — show login screen
       localStorage.removeItem(CONFIG.TOKEN_KEY);
       localStorage.removeItem('upscMaaUser');
       Auth.show();
@@ -111,7 +109,6 @@ var Auth = {
 
     if (!data || !data.token) return;
 
-    // Success
     localStorage.setItem(CONFIG.TOKEN_KEY, data.token);
     localStorage.setItem('upscMaaUser', JSON.stringify(data.user));
     Auth.user = data.user;
@@ -135,7 +132,7 @@ var Auth = {
   logout: function() {
     localStorage.removeItem(CONFIG.TOKEN_KEY);
     localStorage.removeItem('upscMaaUser');
-    Auth.user      = null;
+    Auth.user       = null;
     Auth.isRegister = false;
     var btn = document.getElementById('authSubmit');
     if (btn) btn.textContent = 'Login';
