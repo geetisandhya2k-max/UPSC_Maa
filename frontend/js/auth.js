@@ -1,4 +1,4 @@
-/* auth.js — Login and Register with server token verification */
+/* auth.js — Login and Register */
 var Auth = {
   isRegister: false,
   user: null,
@@ -9,51 +9,55 @@ var Auth = {
       Auth.show();
       return false;
     }
-    // Verify token is still valid on server
+
+    // Verify token with server (3 second timeout - don't block UI)
     try {
+      var controller = new AbortController();
+      var timeoutId  = setTimeout(function() { controller.abort(); }, 3000);
+
       var res = await fetch(CONFIG.API_URL + '/auth/me', {
-        headers: { 'Authorization': 'Bearer ' + token }
+        headers: { 'Authorization': 'Bearer ' + token },
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+
       if (res.ok) {
         var data = await res.json();
         Auth.user = data.user;
         localStorage.setItem('upscMaaUser', JSON.stringify(data.user));
         if (data.user.hoursPerDay) STATE.hoursPerDay = data.user.hoursPerDay;
-        if (data.user.alarms)      STATE.alarms = data.user.alarms;
+        if (data.user.alarms)      STATE.alarms      = data.user.alarms;
         if (data.user.firstLaunch) STATE.firstLaunch = data.user.firstLaunch;
         CONFIG.USER_STATE_KEY = CONFIG.STATE_KEY + '_' + (data.user.id || data.user._id);
         loadState();
         App.init();
         return true;
       } else {
-        // Token expired or invalid — clear and show login
+        // Token expired — clear and show login
         localStorage.removeItem(CONFIG.TOKEN_KEY);
         localStorage.removeItem('upscMaaUser');
         Auth.show();
         return false;
       }
     } catch(e) {
-      // Network error — still try to load from cached user
-      var cached = localStorage.getItem('upscMaaUser');
-      if (cached) {
-        try {
-          Auth.user = JSON.parse(cached);
-          App.init();
-          return true;
-        } catch(e2) {}
-      }
+      // Timeout or network error — show login screen
+      localStorage.removeItem(CONFIG.TOKEN_KEY);
+      localStorage.removeItem('upscMaaUser');
       Auth.show();
       return false;
     }
   },
 
   show: function() {
-    document.getElementById('authOv').classList.add('show');
-    document.getElementById('authErr').textContent = '';
+    var ov = document.getElementById('authOv');
+    if (ov) ov.classList.add('show');
+    var err = document.getElementById('authErr');
+    if (err) err.textContent = '';
   },
 
   hide: function() {
-    document.getElementById('authOv').classList.remove('show');
+    var ov = document.getElementById('authOv');
+    if (ov) ov.classList.remove('show');
   },
 
   toggle: function() {
@@ -61,10 +65,11 @@ var Auth = {
     var btn = document.getElementById('authSubmit');
     var nm  = document.getElementById('authName');
     var sw  = document.querySelector('.auth-switch span');
-    btn.textContent  = Auth.isRegister ? 'Register' : 'Login';
-    nm.style.display = Auth.isRegister ? 'block' : 'none';
-    sw.textContent   = Auth.isRegister ? 'Already registered? Login' : 'New user? Register here';
-    document.getElementById('authErr').textContent = '';
+    if (btn) btn.textContent  = Auth.isRegister ? 'Register' : 'Login';
+    if (nm)  nm.style.display = Auth.isRegister ? 'block' : 'none';
+    if (sw)  sw.textContent   = Auth.isRegister ? 'Already registered? Login' : 'New user? Register here';
+    var err = document.getElementById('authErr');
+    if (err) err.textContent = '';
   },
 
   submit: async function() {
@@ -76,11 +81,11 @@ var Auth = {
 
     errEl.textContent = '';
     if (!email || !pass) { errEl.textContent = 'Email and password required'; return; }
-    if (pass.length < 6) { errEl.textContent = 'Password min 6 characters'; return; }
+    if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; return; }
     if (Auth.isRegister && !name) { errEl.textContent = 'Please enter your name'; return; }
 
     btn.textContent = 'Please wait...';
-    btn.disabled = true;
+    btn.disabled    = true;
 
     var data = null;
     try {
@@ -95,28 +100,24 @@ var Auth = {
         body:    JSON.stringify(body)
       });
       data = await res.json();
-      if (!res.ok) data = null;
+      if (!res.ok) { errEl.textContent = data.error || 'Request failed'; data = null; }
     } catch(e) {
+      errEl.textContent = 'Network error. Please try again.';
       data = null;
     }
 
-    btn.disabled = false;
+    btn.disabled    = false;
     btn.textContent = Auth.isRegister ? 'Register' : 'Login';
 
-    if (!data || !data.token) {
-      errEl.textContent = Auth.isRegister
-        ? 'Registration failed. Email may already be registered.'
-        : 'Login failed. Check your email and password.';
-      return;
-    }
+    if (!data || !data.token) return;
 
-    // Success — save token and user
+    // Success
     localStorage.setItem(CONFIG.TOKEN_KEY, data.token);
     localStorage.setItem('upscMaaUser', JSON.stringify(data.user));
     Auth.user = data.user;
 
     if (data.user.hoursPerDay) STATE.hoursPerDay = data.user.hoursPerDay;
-    if (data.user.alarms)      STATE.alarms = data.user.alarms;
+    if (data.user.alarms)      STATE.alarms      = data.user.alarms;
     if (data.user.firstLaunch) STATE.firstLaunch = data.user.firstLaunch;
     CONFIG.USER_STATE_KEY = CONFIG.STATE_KEY + '_' + (data.user.id || data.user._id);
     loadState();
@@ -134,7 +135,7 @@ var Auth = {
   logout: function() {
     localStorage.removeItem(CONFIG.TOKEN_KEY);
     localStorage.removeItem('upscMaaUser');
-    Auth.user = null;
+    Auth.user      = null;
     Auth.isRegister = false;
     var btn = document.getElementById('authSubmit');
     if (btn) btn.textContent = 'Login';

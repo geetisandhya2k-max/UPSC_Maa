@@ -211,7 +211,5 @@ function confetti() {
 }
 
 // ── Boot ──────────────────────────────────────────────────
-// Auth.init() is async — verifies token with server first
-window.addEventListener('DOMContentLoaded', function() {
-  Auth.init();
-});
+// Scripts are at bottom of body so DOM is already ready - call directly
+Auth.init();
