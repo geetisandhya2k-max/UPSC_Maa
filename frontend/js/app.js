@@ -39,6 +39,11 @@ var App = {
         now.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
     }
 
+    // Set plan title based on targetDays
+    var planTitle = document.getElementById('planTitle');
+    var td = STATE.targetDays || 365;
+    if (planTitle) planTitle.textContent = td + '-Day UPSC Plan (' + Math.round(td/30) + ' months)';
+
     Settings.restore();
     Tasks.render();
     Flashcards.render();
