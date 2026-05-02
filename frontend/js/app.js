@@ -19,7 +19,8 @@ var App = {
   init: function() {
     var now = new Date();
     if (!STATE.firstLaunch) { STATE.firstLaunch = now.toISOString(); saveState(); }
-    STATE.dayInPlan = Math.min(365, Math.floor((now - new Date(STATE.firstLaunch)) / 864e5) + 1);
+    var targetDays = STATE.targetDays || 365;
+    STATE.dayInPlan = Math.min(targetDays, Math.floor((now - new Date(STATE.firstLaunch)) / 864e5) + 1);
 
     document.getElementById('hDate').textContent =
       now.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
@@ -53,7 +54,7 @@ var App = {
         'Welcome ' + name + '! Day ' + STATE.dayInPlan + ' 🕉️',
         STATE.dayInPlan === 1
           ? 'Aaj pehla din hai! Maa tere saath hai. Chal shuru karte hain! ❤️'
-          : 'Day ' + STATE.dayInPlan + ' of 365. Streak: ' + STATE.streak + ' days. Keep going beta! 💪'
+          : 'Day ' + STATE.dayInPlan + ' of ' + (STATE.targetDays||365) + '. Streak: ' + STATE.streak + ' days. Keep going beta! 💪'
       );
     }, 1500);
   },
@@ -145,6 +146,16 @@ var App = {
   installPWA: function() {
     if (dIP) dIP.prompt();
     else App.toast('Chrome ⋮ → Add to Home Screen\nor Safari Share → Add to Home Screen 📲');
+  },
+
+  recalcDay: function() {
+    var now = new Date();
+    var targetDays = STATE.targetDays || 365;
+    STATE.dayInPlan = Math.min(targetDays, Math.floor((now - new Date(STATE.firstLaunch)) / 864e5) + 1);
+    Tasks.render();
+    App.updateAdaptBanner();
+    Plan.renderTabs();
+    Plan.renderContent();
   },
 
   toast: function(msg) {
