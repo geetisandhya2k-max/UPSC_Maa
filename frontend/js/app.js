@@ -21,7 +21,6 @@ var App = {
     if (!STATE.firstLaunch) { STATE.firstLaunch = now.toISOString(); saveState(); }
     STATE.dayInPlan = Math.min(365, Math.floor((now - new Date(STATE.firstLaunch)) / 864e5) + 1);
 
-    // Header date
     document.getElementById('hDate').textContent =
       now.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
     document.getElementById('todayDate').textContent =
@@ -31,7 +30,6 @@ var App = {
     var qIdx = Math.floor(Math.random() * MAA_QUOTES.length);
     document.getElementById('maaMsg').textContent = MAA_QUOTES[qIdx];
 
-    // Show user name if available
     if (Auth.user && Auth.user.name) {
       document.getElementById('hDate').textContent =
         'Namaste ' + Auth.user.name + '! ' +
@@ -46,11 +44,9 @@ var App = {
     Timer.updateHourBar();
     App.updateAdaptBanner();
 
-    // Alarm ticks
     setInterval(function() { Notifications.tick(); }, 30000);
     Notifications.tick();
 
-    // Welcome popup
     setTimeout(function() {
       var name = (Auth.user && Auth.user.name) ? Auth.user.name : 'Beta';
       App.showNotif('🌅',
@@ -122,7 +118,7 @@ var App = {
     document.getElementById('lessonMod').classList.add('show');
   },
 
-  closeMod: function()     { document.getElementById('lessonMod').classList.remove('show'); },
+  closeMod: function() { document.getElementById('lessonMod').classList.remove('show'); },
 
   showNotif: function(emoji, title, msg) {
     document.getElementById('nEmi').textContent = emoji;
@@ -211,5 +207,4 @@ function confetti() {
 }
 
 // ── Boot ──────────────────────────────────────────────────
-// Scripts are at bottom of body so DOM is already ready - call directly
 Auth.init();
