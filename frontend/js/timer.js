@@ -1,13 +1,14 @@
-/* timer.js — Study timer - FIXED: multiple start prevention */
+/* timer.js — Study timer */
 var Timer = {
-  interval:  null,
-  syncInt:   null,
+  interval: null,
+  syncInt:  null,
 
   start: function() {
-    if (STATE.timerOn) return;          // prevent double-start
+    // Always reset timerOn first (in case stale state from localStorage)
+    if (Timer.interval !== null) return; // already running
     STATE.timerOn = true;
-    document.getElementById('startBtn').style.opacity = '0.5';
-    document.getElementById('startBtn').disabled = true;
+    var btn = document.getElementById('startBtn');
+    if (btn) { btn.style.opacity = '0.5'; btn.disabled = true; }
 
     Timer.interval = setInterval(function() {
       STATE.timerSec++;
@@ -23,19 +24,19 @@ var Timer = {
     }, 1000);
 
     Timer.syncInt = setInterval(function() {
-      if (STATE.timerOn) API.syncTimer(STATE.timerSec, new Date().getDay());
+      API.syncTimer(STATE.timerSec, new Date().getDay());
     }, 30000);
   },
 
   pause: function() {
-    if (!STATE.timerOn) return;         // prevent double-pause
-    STATE.timerOn = false;
+    if (Timer.interval === null) return; // already paused
     clearInterval(Timer.interval);
     clearInterval(Timer.syncInt);
     Timer.interval = null;
     Timer.syncInt  = null;
-    document.getElementById('startBtn').style.opacity = '1';
-    document.getElementById('startBtn').disabled = false;
+    STATE.timerOn  = false;
+    var btn = document.getElementById('startBtn');
+    if (btn) { btn.style.opacity = '1'; btn.disabled = false; }
     var d = new Date().getDay();
     if (!STATE.weekH) STATE.weekH = [0,0,0,0,0,0,0];
     STATE.weekH[d] = parseFloat((STATE.timerSec / 3600).toFixed(2));
@@ -62,9 +63,8 @@ var Timer = {
     var st  = document.getElementById('sTime');
     if (el) el.textContent = str;
     if (st) st.textContent = (STATE.timerSec/3600).toFixed(1)+'h';
-    if (STATE.timerSec > 0 && STATE.timerSec % 3600 === 0) {
+    if (STATE.timerSec > 0 && STATE.timerSec % 3600 === 0)
       App.toast('⭐ ' + Math.floor(STATE.timerSec/3600) + 'h done! Maa itni proud hai! 💛');
-    }
   },
 
   updateHourBar: function() {
@@ -75,12 +75,12 @@ var Timer = {
     var doneEl = document.getElementById('hbarDone');
     var targEl = document.getElementById('hbarTarget');
     if (fill)   fill.style.width = pct + '%';
-    if (doneEl) doneEl.textContent = done < 60 ? Math.round(done) + ' min studied' : (done/60).toFixed(1) + 'h studied';
-    if (targEl) targEl.textContent = 'Target: ' + (STATE.hoursPerDay < 1 ? Math.round(STATE.hoursPerDay*60)+'min' : STATE.hoursPerDay+'h');
+    if (doneEl) doneEl.textContent = done < 60 ? Math.round(done)+' min studied' : (done/60).toFixed(1)+'h studied';
+    if (targEl) targEl.textContent = 'Target: '+(STATE.hoursPerDay<1 ? Math.round(STATE.hoursPerDay*60)+'min' : STATE.hoursPerDay+'h');
     if (pct >= 100 && !STATE.hourGoalCelebrated) {
       STATE.hourGoalCelebrated = true;
       setTimeout(function() {
-        App.celebrate('⭐', 'Study Goal Complete! 💪', 'Poore '+STATE.hoursPerDay+'h kar liye! Maa khush hai! ❤️');
+        App.celebrate('⭐','Study Goal Complete! 💪','Poore '+STATE.hoursPerDay+'h kar liye! Maa khush hai! ❤️');
       }, 500);
     }
   }

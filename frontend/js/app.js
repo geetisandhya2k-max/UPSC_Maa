@@ -19,6 +19,8 @@ var App = {
   init: function() {
     var now = new Date();
     if (!STATE.firstLaunch) { STATE.firstLaunch = now.toISOString(); saveState(); }
+    // Always reset timer state on page load (prevent stale localStorage blocking timer)
+    STATE.timerOn = false;
     var targetDays = STATE.targetDays || 365;
     STATE.dayInPlan = Math.min(targetDays, Math.floor((now - new Date(STATE.firstLaunch)) / 864e5) + 1);
 
@@ -46,6 +48,23 @@ var App = {
     App.updateAdaptBanner();
 
     setInterval(function() { Notifications.tick(); }, 30000);
+
+    // Auto-logout after 30 minutes of inactivity
+    var inactivityTimer = null;
+    function resetInactivity() {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(function() {
+        if (Auth.user) {
+          Timer.pause();
+          App.toast('Session expired. Please login again.');
+          setTimeout(function() { Auth.logout(); }, 2000);
+        }
+      }, 30 * 60 * 1000); // 30 minutes
+    }
+    ['click','keypress','touchstart','scroll'].forEach(function(ev) {
+      document.addEventListener(ev, resetInactivity, { passive: true });
+    });
+    resetInactivity();
     Notifications.tick();
 
     setTimeout(function() {
@@ -150,6 +169,8 @@ var App = {
 
   recalcDay: function() {
     var now = new Date();
+    // Always reset timer state on page load (prevent stale localStorage blocking timer)
+    STATE.timerOn = false;
     var targetDays = STATE.targetDays || 365;
     STATE.dayInPlan = Math.min(targetDays, Math.floor((now - new Date(STATE.firstLaunch)) / 864e5) + 1);
     Tasks.render();

@@ -1,4 +1,4 @@
-/* settings.js - Fix 3+4: hours/day updates tasks + target days user can set */
+/* settings.js */
 var Settings = {
 
   onHourChange: function(v) {
@@ -6,7 +6,7 @@ var Settings = {
     STATE.hoursPerDay = h;
     document.getElementById('hourSV').textContent = h + 'h';
     Settings.buildPreview(h);
-    Tasks.render();             // rebuild tasks based on new hours
+    Tasks.render();
     App.updateAdaptBanner();
     Timer.updateHourBar();
     saveState();
@@ -17,29 +17,39 @@ var Settings = {
   onTargetDaysChange: function(v) {
     var days = parseInt(v);
     STATE.targetDays = days;
-    document.getElementById('targetDaysSV').textContent = days + ' days';
+    var sv = document.getElementById('targetDaysSV');
+    if (sv) sv.textContent = days + ' days';
     Settings.updateTargetInfo(days);
+    // Recalculate dayInPlan with new target
+    var now = new Date();
+    STATE.dayInPlan = Math.min(days, Math.floor((now - new Date(STATE.firstLaunch)) / 864e5) + 1);
     saveState();
-    // Recalculate dayInPlan against new target
-    App.recalcDay();
+    // Update everything that depends on targetDays
+    Tasks.render();
+    App.updateAdaptBanner();
+    // Refresh plan tab if open
+    if (document.getElementById('pg-plan').classList.contains('active')) {
+      Plan.renderTabs();
+      Plan.renderContent();
+    }
+    App.toast('📅 Plan updated to ' + days + ' days!');
   },
 
   updateTargetInfo: function(days) {
     var el = document.getElementById('targetDaysInfo');
     if (!el) return;
-    var months = (days / 30).toFixed(1);
-    var tasksPerDay = Tasks.get(STATE.hoursPerDay || 2, STATE.dayInPlan || 1).length;
-    var topicsPerDay = Math.ceil(420 / days);
+    var months     = (days / 30).toFixed(1);
+    var tasksCount = Tasks.get(STATE.hoursPerDay || 2, STATE.dayInPlan || 1).length;
+    var topicsDay  = Math.ceil(420 / days);
+    var maaMsg     = days <= 90  ? 'Bahut tight! Kam se kam 6h/day chahiye!' :
+                     days <= 180 ? 'Good target! 4-6h daily karo!' :
+                     days <= 365 ? 'Perfect — 1 year is ideal for UPSC!' :
+                                   'Aaram se chaloge — but consistency must!';
     el.innerHTML =
-      '<div class="tp-item"><span class="tp-lbl">Target</span><span class="tp-val">' + days + ' days (' + months + ' months)</span></div>' +
-      '<div class="tp-item"><span class="tp-lbl">Topics/day</span><span class="tp-val">' + topicsPerDay + ' topics</span></div>' +
-      '<div class="tp-item"><span class="tp-lbl">Daily tasks</span><span class="tp-val">' + tasksPerDay + ' tasks</span></div>' +
-      '<div class="tp-item"><span class="tp-lbl">Maa says</span><span class="tp-val" style="color:var(--sf)">' +
-        (days <= 90 ? 'Bahut tight schedule! Kam se kam 6h/day chahiye!' :
-         days <= 180 ? 'Good target! 4-6h daily zaroor karo!' :
-         days <= 365 ? 'Perfect — 1 year is ideal for UPSC!' :
-         'Aaram se chaloge — but consistency must!') +
-      '</span></div>';
+      '<div class="tp-item"><span class="tp-lbl">Target</span><span class="tp-val">'+days+' days ('+months+' months)</span></div>' +
+      '<div class="tp-item"><span class="tp-lbl">Topics/day</span><span class="tp-val">'+topicsDay+' topics</span></div>' +
+      '<div class="tp-item"><span class="tp-lbl">Daily tasks</span><span class="tp-val">'+tasksCount+' tasks</span></div>' +
+      '<div class="tp-item"><span class="tp-lbl">Maa says</span><span class="tp-val" style="color:var(--sf)">'+maaMsg+'</span></div>';
   },
 
   buildPreview: function(h) {
@@ -53,7 +63,6 @@ var Settings = {
     else if (mins <= 480) { tier='Aspirant (6-8 hrs)';   tasks=7;  note='Topper level!'; }
     else if (mins <= 600) { tier='Topper (8-10 hrs)';    tasks=8;  note='Rank 1 material!'; }
     else                  { tier='IAS Officer (10-12h)'; tasks=10; note='FULL MODE! 🏆'; }
-
     var el = document.getElementById('tasksPreview');
     if (!el) return;
     el.innerHTML =
@@ -81,13 +90,11 @@ var Settings = {
   },
 
   restore: function() {
-    // Hours slider
     var hs = document.getElementById('hourSlider');
     var hv = document.getElementById('hourSV');
     if (hs) hs.value = STATE.hoursPerDay || 2;
     if (hv) hv.textContent = (STATE.hoursPerDay || 2) + 'h';
 
-    // Target days slider
     var td  = STATE.targetDays || 365;
     var tds = document.getElementById('targetDaysSlider');
     var tdv = document.getElementById('targetDaysSV');
@@ -95,7 +102,6 @@ var Settings = {
     if (tdv) tdv.textContent = td + ' days';
     Settings.updateTargetInfo(td);
 
-    // Alarms
     var alM = document.getElementById('alM');
     var alA = document.getElementById('alA');
     var alN = document.getElementById('alN');
