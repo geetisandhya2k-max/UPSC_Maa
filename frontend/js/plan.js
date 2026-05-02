@@ -17,6 +17,11 @@ var activePlan = 'All';
 var Plan = {
   renderTabs: function() {
     PHASES = getPhases();
+    // Update plan page title dynamically
+    var titleEl = document.getElementById('planTitle');
+    var t = STATE.targetDays || 365;
+    var months = (t/30).toFixed(0);
+    if (titleEl) titleEl.textContent = t + '-Day UPSC Plan (' + months + ' months)';
     var tabs = ['All'].concat(PHASES.map(function(p){ return p.name; }));
     document.getElementById('planTabs').innerHTML = tabs.map(function(p) {
       return '<button class="ptab '+(activePlan===p?'active':'')+'" onclick="Plan.setPhase(\''+p+'\')">'+p+'</button>';
