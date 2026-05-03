@@ -161,3 +161,35 @@
 
 /* Toast */
 .toast { position:fixed; bottom:calc(76px + var(--sb)); left:50%; transform:translateX(-50%); background:linear-gradient(135deg,var(--sf),var(--gold)); color:#fff; padding:9px 16px; border-radius:18px; font-family:'Baloo 2'; font-size:11px; font-weight:700; z-index:500; max-width:270px; text-align:center; animation:npop .28s ease; pointer-events:none; white-space:pre-line; }
+
+
+/* ── Study Submit Box ── */
+.study-submit-box {
+  margin: 7px 13px 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px;
+}
+.study-submit-box input:focus {
+  outline: none;
+  border-color: var(--sf) !important;
+}
+
+/* ── Pending Day Cards ── */
+.pending-day-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,107,107,0.08);
+  border: 1px solid rgba(255,107,107,0.2);
+  border-radius: 10px;
+  padding: 10px 13px;
+  margin-top: 7px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.pending-day-card:active { background: rgba(255,107,107,0.16); }
+.pd-day   { font-family:'Baloo 2'; font-size:13px; font-weight:700; color:var(--pink); }
+.pd-count { flex:1; font-size:11px; color:var(--muted); }
+.pd-arrow { font-size:16px; color:var(--pink); }
