@@ -19,8 +19,6 @@ var App = {
   init: function() {
     var now = new Date();
     if (!STATE.firstLaunch) { STATE.firstLaunch = now.toISOString(); saveState(); }
-    // Always reset timer state on page load (prevent stale localStorage blocking timer)
-    STATE.timerOn = false;
     var targetDays = STATE.targetDays || 365;
     STATE.dayInPlan = Math.min(targetDays, Math.floor((now - new Date(STATE.firstLaunch)) / 864e5) + 1);
 
@@ -174,8 +172,6 @@ var App = {
 
   recalcDay: function() {
     var now = new Date();
-    // Always reset timer state on page load (prevent stale localStorage blocking timer)
-    STATE.timerOn = false;
     var targetDays = STATE.targetDays || 365;
     STATE.dayInPlan = Math.min(targetDays, Math.floor((now - new Date(STATE.firstLaunch)) / 864e5) + 1);
     Tasks.render();

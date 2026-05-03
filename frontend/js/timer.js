@@ -1,87 +1,79 @@
-/* timer.js — Study timer */
+/* timer.js — Simple study time logger (submit hours studied) */
 var Timer = {
-  interval: null,
-  syncInt:  null,
+  interval:  null,
+  running:   false,
+  startTime: null,
 
-  start: function() {
-    // Always reset timerOn first (in case stale state from localStorage)
-    if (Timer.interval !== null) return; // already running
-    STATE.timerOn = true;
-    var btn = document.getElementById('startBtn');
-    if (btn) { btn.style.opacity = '0.5'; btn.disabled = true; }
+  // Log study time manually (user submits hours after studying)
+  submitStudyTime: function() {
+    var hrs = parseFloat(document.getElementById('studyHrsInput').value || '0');
+    var min = parseInt(document.getElementById('studyMinInput').value || '0');
+    if (isNaN(hrs)) hrs = 0;
+    if (isNaN(min)) min = 0;
+    var totalMin = Math.round(hrs * 60) + min;
+    if (totalMin <= 0) { App.toast('⚠️ Enter study time first!'); return; }
+    if (totalMin > 720) { App.toast('⚠️ Maximum 12 hours per day!'); return; }
 
-    Timer.interval = setInterval(function() {
-      STATE.timerSec++;
-      STATE.totalSec = (STATE.totalSec || 0) + 1;
-      Timer.updateDisplay();
-      if (STATE.timerSec % 60 === 0) {
-        var d = new Date().getDay();
-        if (!STATE.weekH) STATE.weekH = [0,0,0,0,0,0,0];
-        STATE.weekH[d] = parseFloat((STATE.timerSec / 3600).toFixed(2));
-        Timer.updateHourBar();
-        saveState();
-      }
-    }, 1000);
+    var addedSec = totalMin * 60;
+    STATE.timerSec = (STATE.timerSec || 0) + addedSec;
+    STATE.totalSec = (STATE.totalSec || 0) + addedSec;
 
-    Timer.syncInt = setInterval(function() {
-      API.syncTimer(STATE.timerSec, new Date().getDay());
-    }, 30000);
-  },
-
-  pause: function() {
-    if (Timer.interval === null) return; // already paused
-    clearInterval(Timer.interval);
-    clearInterval(Timer.syncInt);
-    Timer.interval = null;
-    Timer.syncInt  = null;
-    STATE.timerOn  = false;
-    var btn = document.getElementById('startBtn');
-    if (btn) { btn.style.opacity = '1'; btn.disabled = false; }
     var d = new Date().getDay();
     if (!STATE.weekH) STATE.weekH = [0,0,0,0,0,0,0];
     STATE.weekH[d] = parseFloat((STATE.timerSec / 3600).toFixed(2));
-    Timer.updateHourBar();
-    saveState();
-    API.syncTimer(STATE.timerSec, d);
-  },
 
-  reset: function() {
-    Timer.pause();
-    STATE.timerSec = 0;
-    STATE.hourGoalCelebrated = false;
+    saveState();
     Timer.updateDisplay();
     Timer.updateHourBar();
+    API.syncTimer(STATE.timerSec, d);
+
+    // Reset inputs
+    document.getElementById('studyHrsInput').value = '';
+    document.getElementById('studyMinInput').value = '';
+
+    // Celebrate if goal met
+    var targetMin = (STATE.hoursPerDay || 2) * 60;
+    var studiedMin = STATE.timerSec / 60;
+    if (studiedMin >= targetMin && !STATE.hourGoalCelebrated) {
+      STATE.hourGoalCelebrated = true;
+      saveState();
+      App.celebrate('⭐', 'Study Goal Met! 💪', 'Aaj ka '+STATE.hoursPerDay+'h target poora! Maa bahut khush hai! ❤️');
+    } else {
+      App.toast('✅ ' + totalMin + ' min study logged! Shabash beta! 🌟');
+    }
+  },
+
+  resetDay: function() {
+    if (!confirm('Reset today\'s study time?')) return;
+    STATE.timerSec = 0;
+    STATE.hourGoalCelebrated = false;
+    var d = new Date().getDay();
+    if (STATE.weekH) STATE.weekH[d] = 0;
     saveState();
+    Timer.updateDisplay();
+    Timer.updateHourBar();
+    App.toast('🔄 Study time reset for today.');
   },
 
   updateDisplay: function() {
-    var h   = Math.floor(STATE.timerSec / 3600);
-    var m   = Math.floor((STATE.timerSec % 3600) / 60);
-    var s   = STATE.timerSec % 60;
-    var str = (h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+    var sec = STATE.timerSec || 0;
+    var h   = Math.floor(sec / 3600);
+    var m   = Math.floor((sec % 3600) / 60);
     var el  = document.getElementById('timerDisp');
     var st  = document.getElementById('sTime');
-    if (el) el.textContent = str;
-    if (st) st.textContent = (STATE.timerSec/3600).toFixed(1)+'h';
-    if (STATE.timerSec > 0 && STATE.timerSec % 3600 === 0)
-      App.toast('⭐ ' + Math.floor(STATE.timerSec/3600) + 'h done! Maa itni proud hai! 💛');
+    if (el) el.textContent = h + 'h ' + m + 'min studied today';
+    if (st) st.textContent = (sec / 3600).toFixed(1) + 'h';
   },
 
   updateHourBar: function() {
-    var done   = STATE.timerSec / 60;
+    var done   = (STATE.timerSec || 0) / 60;
     var target = (STATE.hoursPerDay || 2) * 60;
     var pct    = Math.min(100, Math.round(done / target * 100));
     var fill   = document.getElementById('hbarFill');
     var doneEl = document.getElementById('hbarDone');
     var targEl = document.getElementById('hbarTarget');
-    if (fill)   fill.style.width = pct + '%';
+    if (fill)   fill.style.width   = pct + '%';
     if (doneEl) doneEl.textContent = done < 60 ? Math.round(done)+' min studied' : (done/60).toFixed(1)+'h studied';
-    if (targEl) targEl.textContent = 'Target: '+(STATE.hoursPerDay<1 ? Math.round(STATE.hoursPerDay*60)+'min' : STATE.hoursPerDay+'h');
-    if (pct >= 100 && !STATE.hourGoalCelebrated) {
-      STATE.hourGoalCelebrated = true;
-      setTimeout(function() {
-        App.celebrate('⭐','Study Goal Complete! 💪','Poore '+STATE.hoursPerDay+'h kar liye! Maa khush hai! ❤️');
-      }, 500);
-    }
+    if (targEl) targEl.textContent = 'Target: '+STATE.hoursPerDay+'h';
   }
 };
