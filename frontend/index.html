@@ -103,22 +103,13 @@
     </div>
     <div class="dt-row">
       <div class="dt-card"><div class="v" id="todayDate">—</div><div class="l">📅 Today</div></div>
-      <div class="dt-card" id="timerCard"><div class="v" id="timerDisp" style="font-size:14px;">0h 0min studied</div><div class="l">⏱️ Today's Study</div></div>
+      <div class="dt-card" id="timerCard"><div class="v" id="timerDisp">00:00:00</div><div class="l">⏱️ Study Timer</div></div>
     </div>
-    <div class="study-submit-box">
-      <p style="font-size:11px;color:var(--muted);margin-bottom:9px;">📝 After studying, log your time:</p>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:9px;">
-        <input type="number" id="studyHrsInput" min="0" max="12" placeholder="Hours" 
-          style="flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:9px;padding:10px;color:var(--text);font-size:14px;font-family:Baloo 2;text-align:center;">
-        <span style="color:var(--muted);font-size:12px;">hrs</span>
-        <input type="number" id="studyMinInput" min="0" max="59" placeholder="Min" 
-          style="flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:9px;padding:10px;color:var(--text);font-size:14px;font-family:Baloo 2;text-align:center;">
-        <span style="color:var(--muted);font-size:12px;">min</span>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="tbtn tbtn-s" style="flex:3;" onclick="Timer.submitStudyTime()">✅ Submit Study Time</button>
-        <button class="tbtn tbtn-r" style="flex:1;" onclick="Timer.resetDay()" title="Reset today">↺</button>
-      </div>
+    <div class="timer-btns">
+      <button class="tbtn tbtn-s" id="startBtn" onclick="Timer.start()">▶ Start</button>
+      <button class="tbtn tbtn-p" onclick="Timer.pause()">⏸ Pause</button>
+      <button class="tbtn tbtn-submit" onclick="Timer.submit()">✅ Submit</button>
+      <button class="tbtn tbtn-r" onclick="Timer.reset()">↺</button>
     </div>
     <div class="prog-card">
       <h3>📊 Today's Progress</h3>
